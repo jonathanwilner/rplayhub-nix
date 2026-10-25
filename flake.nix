@@ -31,6 +31,8 @@
           pmd3 =
             (py.pymobiledevice3.override { ipsw-parser = ipswParserFixed; }).overridePythonAttrs {
               dontCheckRuntimeDeps = true;
+              # The test suite needs a real device at collection time.
+              doCheck = false;
             };
         in
         pmd3;
