@@ -22,9 +22,20 @@
             };
             doCheck = false;
           };
-          pyimg4Fixed = py.pyimg4.override { asn1 = asn127; };
+          pyimg4Fixed = py.pyimg4.overridePythonAttrs (old: {
+            propagatedBuildInputs =
+              (lib.filter (dep: !(dep ? pname && dep.pname == "asn1"))
+                (old.propagatedBuildInputs or [ ]))
+              ++ [ asn127 ];
+          });
+          pmd3 = py.pymobiledevice3.overridePythonAttrs (old: {
+            propagatedBuildInputs =
+              builtins.map (dep:
+                if (dep ? pname && dep.pname == "pyimg4") then pyimg4Fixed else dep)
+              (old.propagatedBuildInputs or [ ]);
+          });
         in
-        py.pymobiledevice3.override { pyimg4 = pyimg4Fixed; };
+        pmd3;
       # allowBroken: pyimg4 is marked broken in nixpkgs for exactly the
       # asn1<3.0.0 constraint that the asn1 2.7.0 override below fixes.
       pkgsFor = system: import nixpkgs { inherit system; config.allowBroken = true; };
