@@ -5,6 +5,26 @@
     let
       lib = nixpkgs.lib;
       systems = [ "x86_64-linux" "aarch64-linux" ];
+
+      # pymobiledevice3 7.7.0 (needed for the wireless RemotePairing path) has one
+      # broken dependency in nixpkgs: pyimg4 pins asn1<3.0.0 while nixpkgs ships
+      # asn1 3.2.0. Build the older pure-Python asn1 and override it in.
+      pmd3For = pkgs:
+        let
+          py = pkgs.python313Packages;
+          asn127 = py.buildPythonPackage rec {
+            pname = "asn1";
+            version = "2.7.0";
+            format = "setuptools";
+            src = pkgs.fetchurl {
+              url = "https://files.pythonhosted.org/packages/2a/9f/9a45cbf77edbf85006bbd6d0067cc87b6a9291e12b2c958d818132e7e04d/asn1-2.7.0.tar.gz";
+              hash = "sha256-RMD8PSjGqSbk1JWf+8G8zzf69NygdSC6LpsbWzb+C9o=";
+            };
+            doCheck = false;
+          };
+          pyimg4Fixed = py.pyimg4.override { asn1 = asn127; };
+        in
+        py.pymobiledevice3.override { pyimg4 = pyimg4Fixed; };
       forAll = f: lib.genAttrs systems (system: f nixpkgs.legacyPackages.${system} system);
       mk = pkgs:
         let
