@@ -35,7 +35,7 @@ let
     owner = "ocornut";
     repo = "imgui";
     rev = "v1.91.8";
-    hash = "sha256-2zouAr/Wwmmt8JaJUFcwU9AC9Avfue8uSpC86ASw8oY=";
+    hash = "sha256-+BuSAXvLvOYOmENzxd1pGDE6llWhTGVu7C3RnoVLVzg=";
   };
   jsonHpp = fetchurl {
     url = "https://github.com/nlohmann/json/releases/download/v3.11.3/json.hpp";
