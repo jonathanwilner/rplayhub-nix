@@ -17,6 +17,8 @@ stdenv.mkDerivation rec {
   patches = [ "${rplayhubSrc}/patches/ffmpeg-rvra.patch" ];
   patchFlags = [ "-p1" ];
 
+  enableParallelBuilding = true;
+
   nativeBuildInputs = [ pkg-config ] ++ lib.optional stdenv.hostPlatform.isx86_64 nasm;
   buildInputs = [ zlib ];
 

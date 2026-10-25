@@ -88,6 +88,8 @@ stdenv.mkDerivation {
   pname = "rplayhub";
   inherit version src;
 
+  enableParallelBuilding = true;
+
   nativeBuildInputs = [ pkg-config makeWrapper patchelf ];
   buildInputs = runtimeLibs;
 
