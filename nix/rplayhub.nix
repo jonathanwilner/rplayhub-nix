@@ -9,7 +9,7 @@
   pkg-config,
   makeWrapper,
   patchelf,
-  sdl2,
+  SDL2,
   libX11,
   libXext,
   libGL,
@@ -70,7 +70,7 @@ let
   };
 
   runtimeLibs = [
-    sdl2
+    SDL2
     libX11
     libXext
     libGL
