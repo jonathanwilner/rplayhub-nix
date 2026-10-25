@@ -11,7 +11,7 @@
         owner = "rPlayAI";
         repo = "rPlayHub";
         rev = "dc502aebdedc89667b1139c2c7da2e313aa3f0dc";
-        hash = "sha256-E7GvwovgXQtG5dXKUMW0QNNS5XfFOJrYtNYYR7lfla8=";
+        hash = "sha256-xQ+TguD/NcxYzowJviJqcYTXm6KiAqdVimSqeRUoI1I=";
       };
 
       forAll = f: lib.genAttrs systems (system: f nixpkgs.legacyPackages.${system} system);
