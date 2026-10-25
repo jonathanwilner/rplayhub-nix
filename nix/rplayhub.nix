@@ -156,7 +156,7 @@ stdenv.mkDerivation {
 
     install -Dm755 ${replaceVars ../scripts/rplayhub-remote.sh {
       PMD3 = "${pymobiledevice3}/bin/pymobiledevice3";
-      RPLAYHUB_BIN = "$out";
+      RPLAYHUB = "$out";
     }} $out/bin/rplayhub-remote
     wrapProgram $out/bin/rplayhub-remote \
       --prefix PATH : ${lib.makeBinPath [ sudo util-linux ]}
