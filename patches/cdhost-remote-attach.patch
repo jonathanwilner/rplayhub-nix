@@ -1,0 +1,113 @@
+diff --git a/host-c/cdhost.c b/host-c/cdhost.c
+index 223167e..24de9f8 100644
+--- a/host-c/cdhost.c
++++ b/host-c/cdhost.c
+@@ -276,7 +276,7 @@ static int find_coredevice_tunnel(char *ours, size_t ours_len, char *device, siz
+             mtu = m ? strtol(m + 4, NULL, 10) : 0;
+             continue;
+         }
+-        if (strncmp(iface, "utun", 4) != 0) continue;
++        if (strncmp(iface, "utun", 4) != 0 && strncmp(iface, "tun", 3) != 0) continue;
+         char *inet6 = strstr(line, "inet6 ");
+         if (!inet6) continue;
+         char a[128] = {0};
+@@ -338,21 +338,54 @@ static int scan_open_ports(const char *host, int lo, int hi, int *out, int max)
+     return found;
+ }
+ 
++/* Parse [host:]port into host (default 127.0.0.1) and port. Returns 0 on success. */
++static int parse_host_port(const char *spec, char *host, size_t host_len, long *port_out)
++{
++    char copy[256];
++    if (strlen(spec) >= sizeof copy) return -1;
++    strcpy(copy, spec);
++    char *colon = strrchr(copy, ':');
++    if (!colon) {
++        *port_out = strtol(copy, NULL, 10);
++        snprintf(host, host_len, "127.0.0.1");
++        return 0;
++    }
++    *colon = 0;
++    if (copy[0] == '[') {
++        char *close = strchr(copy, ']');
++        if (!close) return -1;
++        *close = 0;
++        snprintf(host, host_len, "%s", copy + 1);
++    } else {
++        snprintf(host, host_len, "%s", copy);
++    }
++    *port_out = strtol(colon + 1, NULL, 10);
++    return 0;
++}
++
+ /* Bring up a session on a tunnel someone else built. Returns 0 and fills addr/rsd on success. */
+ static int attach_existing_tunnel(char *addr, size_t addr_len, char *ours, size_t ours_len,
+                                   long *rsd_out)
+ {
+     printf("\n== attaching to an existing CoreDevice tunnel ==\n");
+-    if (find_coredevice_tunnel(ours, ours_len, addr, addr_len) != 0) {
+-        fprintf(stderr, "  no CoreDevice tunnel found (open Device Hub or Xcode to create one)\n");
+-        return -1;
+-    }
+     const char *rp = getenv("RPLAY_ATTACH_RSD");
+-    if (rp && *rp) {                                   /* skip the search when told the port */
+-        *rsd_out = strtol(rp, NULL, 10);
+-        printf("  RSD port %ld (from RPLAY_ATTACH_RSD)\n", *rsd_out);
++    if (rp && *rp) {
++        /* Endpoint given. This is the Linux wireless path: pymobiledevice3's
++         * classic RemoteXPC tunnel relays the device services onto localhost
++         * ports, so there is no utun to discover. */
++        if (parse_host_port(rp, addr, addr_len, rsd_out) != 0) {
++            fprintf(stderr, "  bad RPLAY_ATTACH_RSD '%s' (want [host:]port)\n", rp);
++            return -1;
++        }
++        const char *ra = getenv("RPLAY_ATTACH_ADDR");
++        if (ra && *ra) snprintf(addr, addr_len, "%s", ra);
++        printf("  RSD %s:%ld (from RPLAY_ATTACH_RSD)\n", addr, *rsd_out);
+         return 0;
+     }
++    if (find_coredevice_tunnel(ours, ours_len, addr, addr_len) != 0) {
++        fprintf(stderr, "  no CoreDevice tunnel found (run rplayhub-remote, or open Device Hub / Xcode)\n");
++        return -1;
++    }
+     int lo = 49152, hi = 57000;
+     const char *r = getenv("RPLAY_ATTACH_SCAN");
+     if (r && *r) sscanf(r, "%d-%d", &lo, &hi);
+diff --git a/host-c/tunio.c b/host-c/tunio.c
+index 51bc554..6d968bc 100644
+--- a/host-c/tunio.c
++++ b/host-c/tunio.c
+@@ -18,17 +18,26 @@ int usernet_is_on(void) { return g_on; }
+ int tun_connect(const char *addr, int port, int timeout_s)
+ {
+     if (g_on) return usernet_connect(addr, port);
+-    struct sockaddr_in6 sa;
+-    memset(&sa, 0, sizeof sa);
+-    sa.sin6_family = AF_INET6;
+-    sa.sin6_port = htons((uint16_t)port);
+-    if (inet_pton(AF_INET6, addr, &sa.sin6_addr) != 1) return -1;
+-    int fd = socket(AF_INET6, SOCK_STREAM, 0);
++    /* Accept IPv4 literals as well as IPv6 tunnel addresses: pymobiledevice3's
++     * wireless tunnel relays device services onto 127.0.0.1 ports. */
++    struct sockaddr_in6 sa6;
++    struct sockaddr_in sa4;
++    memset(&sa6, 0, sizeof sa6);
++    memset(&sa4, 0, sizeof sa4);
++    sa6.sin6_family = AF_INET6;
++    sa6.sin6_port = htons((uint16_t)port);
++    sa4.sin_family = AF_INET;
++    sa4.sin_port = htons((uint16_t)port);
++    int is4 = inet_pton(AF_INET, addr, &sa4.sin_addr) == 1;
++    if (!is4 && inet_pton(AF_INET6, addr, &sa6.sin6_addr) != 1) return -1;
++    int fd = socket(is4 ? AF_INET : AF_INET6, SOCK_STREAM, 0);
+     if (fd < 0) return -1;
+     struct timeval tv = { .tv_sec = timeout_s > 0 ? timeout_s : 10, .tv_usec = 0 };
+     setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof tv);
+     setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof tv);
+-    if (connect(fd, (struct sockaddr *)&sa, sizeof sa) != 0) { close(fd); return -1; }
++    const struct sockaddr *sa = is4 ? (const struct sockaddr *)&sa4 : (const struct sockaddr *)&sa6;
++    socklen_t sl = is4 ? (socklen_t)sizeof sa4 : (socklen_t)sizeof sa6;
++    if (connect(fd, sa, sl) != 0) { close(fd); return -1; }
+     return fd;
+ }
+ 

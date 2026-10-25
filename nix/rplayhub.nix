@@ -23,6 +23,10 @@
   libtatsu,
   ffmpeg-rvra,
   rplayhubSrc,
+  pymobiledevice3,
+  substituteAll,
+  sudo,
+  util-linux,
 }:
 
 let
@@ -82,6 +86,7 @@ let
     libplist
     libimobiledevice-glue
     libtatsu
+    pymobiledevice3
   ];
 in
 stdenv.mkDerivation {
@@ -89,6 +94,8 @@ stdenv.mkDerivation {
   inherit version src;
 
   enableParallelBuilding = true;
+
+  patches = [ ../patches/cdhost-remote-attach.patch ];
 
   nativeBuildInputs = [ pkg-config makeWrapper patchelf ];
   buildInputs = runtimeLibs;
@@ -146,6 +153,15 @@ stdenv.mkDerivation {
     patchelf --set-rpath "$rpath" $out/libexec/rplayhub/cdhost
 
     wrapProgram $out/bin/rplayhub --prefix PATH : ${lib.makeBinPath [ curl ]}
+
+    install -Dm755 ${substituteAll {
+      src = ../scripts/rplayhub-remote.sh;
+      PMD3 = "${pymobiledevice3}/bin/pymobiledevice3";
+      RPLAYHUB_BIN = "$out";
+    }} $out/bin/rplayhub-remote
+    wrapProgram $out/bin/rplayhub-remote \
+      --prefix PATH : ${lib.makeBinPath [ sudo util-linux ]}
+
     runHook postInstall
   '';
 

@@ -25,7 +25,10 @@
           pyimg4Fixed = py.pyimg4.override { asn1 = asn127; };
         in
         py.pymobiledevice3.override { pyimg4 = pyimg4Fixed; };
-      forAll = f: lib.genAttrs systems (system: f nixpkgs.legacyPackages.${system} system);
+      # allowBroken: pyimg4 is marked broken in nixpkgs for exactly the
+      # asn1<3.0.0 constraint that the asn1 2.7.0 override below fixes.
+      pkgsFor = system: import nixpkgs { inherit system; config.allowBroken = true; };
+      forAll = f: lib.genAttrs systems (system: f (pkgsFor system) system);
       mk = pkgs:
         let
           # Fetched with this system's own pkgs: a source derivation pinned to
@@ -40,6 +43,7 @@
         pkgs.callPackage ./nix/rplayhub.nix {
           inherit rplayhubSrc;
           ffmpeg-rvra = pkgs.callPackage ./nix/ffmpeg-rvra.nix { inherit rplayhubSrc; };
+          pymobiledevice3 = pmd3For pkgs;
         };
     in
     {
