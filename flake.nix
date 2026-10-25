@@ -25,7 +25,12 @@
           # pyimg4 pins asn1<3.0.0; pyimg4 is reached through ipsw-parser.
           pyimg4Fixed = py.pyimg4.override { asn1 = asn127; };
           ipswParserFixed = py.ipsw-parser.override { pyimg4 = pyimg4Fixed; };
-          pmd3 = py.pymobiledevice3.override { ipsw-parser = ipswParserFixed; };
+          # pythonRelaxDeps: qh3's <2 pin is the only remaining constraint
+          # violation. The QUIC transport uses qh3; the classic TCP tunnel this
+          # launcher uses does not.
+          pmd3 = py.pymobiledevice3.overridePythonAttrs (old: {
+            pythonRelaxDeps = true;
+          }).override { ipsw-parser = ipswParserFixed; };
         in
         pmd3;
       # allowBroken: pyimg4 is marked broken in nixpkgs for exactly the
