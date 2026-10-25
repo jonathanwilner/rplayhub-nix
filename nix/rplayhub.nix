@@ -24,7 +24,7 @@
   ffmpeg-rvra,
   rplayhubSrc,
   pymobiledevice3,
-  substituteAll,
+  replaceVars,
   sudo,
   util-linux,
 }:
@@ -154,8 +154,7 @@ stdenv.mkDerivation {
 
     wrapProgram $out/bin/rplayhub --prefix PATH : ${lib.makeBinPath [ curl ]}
 
-    install -Dm755 ${substituteAll {
-      src = ../scripts/rplayhub-remote.sh;
+    install -Dm755 ${replaceVars ../scripts/rplayhub-remote.sh {
       PMD3 = "${pymobiledevice3}/bin/pymobiledevice3";
       RPLAYHUB_BIN = "$out";
     }} $out/bin/rplayhub-remote
