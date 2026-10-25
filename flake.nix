@@ -28,7 +28,7 @@
           # pymobiledevice3 pins qh3<2: 2.x removed qh3.quic.packet_builder,
           # which remote/tunnel_service.py imports. Pin the 1.7.1 expression
           # (Rust/maturin, cargo deps vendored).
-          qh3_1 = pkgs.callPackage ./nix/qh3-1.nix { };
+          qh3_1 = py.callPackage ./nix/qh3-1.nix { };
           pmd3 =
             (py.pymobiledevice3.override {
               ipsw-parser = ipswParserFixed;
