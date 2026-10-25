@@ -29,7 +29,7 @@
           # constraint violation. The QUIC transport uses qh3; the classic TCP
           # tunnel this launcher uses does not.
           pmd3 =
-            (py.pymobiledevice3.override { ipsw-parser = ipswParserFixed; } { }).overridePythonAttrs {
+            (py.pymobiledevice3.override { ipsw-parser = ipswParserFixed; }).overridePythonAttrs {
               dontCheckRuntimeDeps = true;
             };
         in
