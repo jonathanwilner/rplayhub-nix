@@ -95,10 +95,10 @@ stdenv.mkDerivation {
 
   # Reproduce the deps/ layout the Makefiles expect.
   postPatch = ''
-    mkdir -p deps/json
+    mkdir -p deps/json/nlohmann
     ln -s ${lwip} deps/lwip
     ln -s ${imgui} deps/imgui
-    ln -s ${jsonHpp} deps/json/json.hpp
+    ln -s ${jsonHpp} deps/json/nlohmann/json.hpp
     ln -s ${ffmpeg-rvra}/tree deps/ffmpeg
   '';
 
