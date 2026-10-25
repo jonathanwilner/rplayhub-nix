@@ -25,12 +25,15 @@
           # pyimg4 pins asn1<3.0.0; pyimg4 is reached through ipsw-parser.
           pyimg4Fixed = py.pyimg4.override { asn1 = asn127; };
           ipswParserFixed = py.ipsw-parser.override { pyimg4 = pyimg4Fixed; };
-          # dontCheckRuntimeDeps: qh3's <2 pin is the only remaining
-          # constraint violation. The QUIC transport uses qh3; the classic TCP
-          # tunnel this launcher uses does not.
+          # pymobiledevice3 pins qh3<2: 2.x removed qh3.quic.packet_builder,
+          # which remote/tunnel_service.py imports. Pin the 1.7.1 expression
+          # (Rust/maturin, cargo deps vendored).
+          qh3_1 = pkgs.callPackage ./nix/qh3-1.nix { };
           pmd3 =
-            (py.pymobiledevice3.override { ipsw-parser = ipswParserFixed; }).overridePythonAttrs {
-              dontCheckRuntimeDeps = true;
+            (py.pymobiledevice3.override {
+              ipsw-parser = ipswParserFixed;
+              qh3 = qh3_1;
+            }).overridePythonAttrs {
               # The test suite needs a real device at collection time.
               doCheck = false;
             };
