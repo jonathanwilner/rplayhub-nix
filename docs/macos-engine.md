@@ -72,3 +72,18 @@ rplayhub -h 127.0.0.1 -A 19876 -p 19877
 
 Clicks, keyboard and audio work through this path — it is the same engine that
 drives the phone over USB, with the GUI on the other machine.
+
+## Run it as a service
+
+`launchd/install.sh` installs `/Library/LaunchDaemons/com.rplay.cdhost.plist`
+and starts it. The daemon runs `cdhost` as root (the CoreDevice tunnel needs a
+utun), keeps it alive, and writes to `/var/log/rplay-cdhost.log`.
+
+```sh
+sudo ./launchd/install.sh                       # default engine path
+sudo ./launchd/install.sh /path/to/cdhost       # explicit
+sudo launchctl print system/com.rplay.cdhost    # state
+sudo launchctl bootout system/com.rplay.cdhost  # stop
+```
+
+Attach a GUI from any machine with `rplayhub-via <mac-host>`.
