@@ -158,8 +158,9 @@ stdenv.mkDerivation {
     wrapProgram $out/bin/rplayhub --prefix PATH : ${lib.makeBinPath [ curl ]}
 
     install -Dm755 ${replaceVars ../scripts/rplayhub-via.sh {
-      RPLAYHUB_GUI = "$out/bin/rplayhub";
+      RPLAYHUB_GUI = placeholder "out";
     }} $out/bin/rplayhub-via
+    sed -i "s|@RPLAYHUB_GUI@|$out/bin/rplayhub|" $out/bin/rplayhub-via
 
     install -Dm755 ${replaceVars ../scripts/rplayhub-remote.sh {
       PMD3 = "${pymobiledevice3}/bin/pymobiledevice3";
