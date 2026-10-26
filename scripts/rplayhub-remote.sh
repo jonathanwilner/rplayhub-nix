@@ -46,7 +46,15 @@ if [ "${1:-}" != "--root-step" ] && [ "${1:-}" != "--tunnel-ready" ]; then
     "$PMD3" remote pair
     touch "$state_dir/.remote-paired"
   fi
-  exec sudo "$0" --root-step
+  # NixOS provides the setuid sudo at /run/wrappers/bin/sudo; nixpkgs' sudo in
+  # PATH is not setuid and cannot elevate.
+  SUDO_BIN=""
+  for candidate in /run/wrappers/bin/sudo /usr/bin/sudo /bin/sudo; do
+    if [ -x "$candidate" ]; then SUDO_BIN="$candidate"; break; fi
+  done
+  [ -n "$SUDO_BIN" ] || SUDO_BIN="$(command -v sudo || true)"
+  [ -n "$SUDO_BIN" ] || { echo "no usable sudo found" >&2; exit 1; }
+  exec "$SUDO_BIN" "$0" --root-step
 fi
 
 # ---- phase 2 (root): create the tunnel --------------------------------------
