@@ -98,7 +98,11 @@ stdenv.mkDerivation {
 
   enableParallelBuilding = true;
 
-  patches = [ ../patches/cdhost-remote-attach.patch ];
+  patches = [
+    ../patches/cdhost-remote-attach.patch
+    # Mirror view controls: zoom in/out, fit-to-pane, native 1:1.
+    ../patches/gui-zoom-fit.patch
+  ];
 
   nativeBuildInputs = [ pkg-config makeWrapper patchelf ];
   buildInputs = runtimeLibs;

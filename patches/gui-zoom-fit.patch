@@ -1,0 +1,79 @@
+--- a/client-c/rplay-gui.cpp
++++ b/client-c/rplay-gui.cpp
+@@ -597,6 +597,9 @@
+ static int           g_vtex_w        = 0;
+ static int           g_vtex_h        = 0;
+ static int           g_rotation      = 0; /* 0..3 quadrants */
++/* Mirror view: fit-to-pane (default) or a zoom factor applied on top of it. */
++static bool          g_view_fit      = true;
++static float         g_view_zoom     = 1.0f;
+ static bool          g_recording     = false;
+ static std::string   g_recording_path;
+ static bool          g_drag_active   = false;
+@@ -2281,6 +2284,15 @@
+         target_h = target_w / aspect;
+     }
+ 
++    /* Zoom: fit mode scales the fitted size, otherwise show native pixels. */
++    if (!g_view_fit) {
++        target_w = (float)disp_w * g_view_zoom;
++        target_h = (float)disp_h * g_view_zoom;
++    } else {
++        target_w *= g_view_zoom;
++        target_h *= g_view_zoom;
++    }
++
+     float px = origin.x + (size.x - target_w) * 0.5f;
+     float py = origin.y + (size.y - target_h) * 0.5f;
+ 
+@@ -2314,6 +2326,50 @@
+         }
+     }
+ 
++    /* View controls: zoom out, zoom in, fit. Drawn over the top-left corner
++     * of the pane so they are reachable even when the image is clipped. */
++    {
++        const float bs = 22.0f * s, pad = 6.0f * s;
++        ImGui::SetCursorScreenPos(ImVec2(origin.x + pad, origin.y + pad));
++        ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 6.0f * s);
++        if (ImGui::Button("-##zoomout", ImVec2(bs, bs))) {
++            g_view_zoom = std::clamp(g_view_zoom / 1.25f, 0.25f, 8.0f);
++            g_view_fit = true;
++        }
++        ImGui::SameLine(0.0f, 4.0f * s);
++        if (ImGui::Button("+##zoomin", ImVec2(bs, bs))) {
++            g_view_zoom = std::clamp(g_view_zoom * 1.25f, 0.25f, 8.0f);
++            g_view_fit = true;
++        }
++        ImGui::SameLine(0.0f, 4.0f * s);
++        if (ImGui::Button("Fit##zoomfit", ImVec2(0.0f, bs))) {
++            g_view_fit = true;
++            g_view_zoom = 1.0f;
++        }
++        ImGui::SameLine(0.0f, 4.0f * s);
++        if (ImGui::Button("1:1##zoomnative", ImVec2(0.0f, bs))) {
++            g_view_fit = false;
++            g_view_zoom = 1.0f;
++        }
++        ImGui::PopStyleVar();
++    }
++
++    /* Ctrl+wheel zooms around the pane, plain wheel stays a scroll swipe. */
++    if (ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows) && ImGui::GetIO().KeyCtrl) {
++        float wz = ImGui::GetIO().MouseWheel;
++        if (std::fabs(wz) > 0.05f) {
++            g_view_fit = true;
++            g_view_zoom = std::clamp(g_view_zoom * (wz > 0.0f ? 1.1f : 1.0f / 1.1f), 0.25f, 8.0f);
++        }
++    }
++    if (g_focused_pane == FocusPane::Stage) {
++        if (ImGui::IsKeyPressed(ImGuiKey_F, false)) { g_view_fit = true; g_view_zoom = 1.0f; }
++        if (ImGui::IsKeyPressed(ImGuiKey_Equal, false) || ImGui::IsKeyPressed(ImGuiKey_KeypadAdd, false))
++            g_view_zoom = std::clamp(g_view_zoom * 1.25f, 0.25f, 8.0f);
++        if (ImGui::IsKeyPressed(ImGuiKey_Minus, false) || ImGui::IsKeyPressed(ImGuiKey_KeypadSubtract, false))
++            g_view_zoom = std::clamp(g_view_zoom / 1.25f, 0.25f, 8.0f);
++    }
++
+     /* Interactive surface: click = tap, drag = swipe, wheel = scroll swipe */
+     ImGui::SetCursorScreenPos(ImVec2(px, py));
+     ImGui::InvisibleButton("##MirrorSurface", ImVec2(target_w, target_h));
