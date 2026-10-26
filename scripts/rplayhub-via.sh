@@ -15,7 +15,7 @@ HOST="${1:?usage: rplayhub-via HOST [--user USER] [--gui PATH] [--no-gui]}"
 shift || true
 
 SSH_USER="${USER:-jonathan}"
-GUI="${RPLAYHUB_GUI:-@RPLAYHUB_GUI@/bin/rplayhub}"
+GUI="${RPLAYHUB_GUI:-@@GUI@@}"
 RUN_GUI=1
 
 while [ $# -gt 0 ]; do
