@@ -74,6 +74,9 @@ let
   };
 
   runtimeLibs = [
+    # rplayhub is C++ (Dear ImGui) while cdhost is C; the C++ runtime is only
+    # needed by the GUI and was missing from the first RPATH.
+    stdenv.cc.cc.lib
     SDL2
     libX11
     libXext
