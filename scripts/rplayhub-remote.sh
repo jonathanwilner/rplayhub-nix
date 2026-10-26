@@ -13,8 +13,9 @@
 set -euo pipefail
 
 PMD3="@PMD3@"
-RPLAYHUB_BIN="@RPLAYHUB@"
 SELF="$(readlink -f "$0")"
+# Installed as $out/bin/rplayhub-remote; the package root is one level up.
+RPLAYHUB_BIN="$(cd "$(dirname "$SELF")/.." && pwd)"
 
 PAIR=0
 GUI=1
