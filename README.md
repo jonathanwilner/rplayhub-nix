@@ -60,3 +60,19 @@ Without it the GUI still starts and falls back to a default font.
 ## Licence
 
 Upstream is GPL-3.0; this packaging follows it.
+
+## Engine on a Mac, GUI on Linux
+
+The engine must sit next to the phone; the GUI can run anywhere. To drive a
+phone plugged into a Mac from a Linux desktop:
+
+```sh
+rplayhub-via <mac-host>
+```
+
+That forwards the engine's three localhost ports over SSH and attaches the GUI.
+The Mac build recipe (including the two portability fixes this environment
+needs) is in [docs/macos-engine.md](docs/macos-engine.md).
+
+Start the engine first and attach the GUI within a few seconds: a late attach
+joins mid-GOP and the first frames fail to decode until the next keyframe.
